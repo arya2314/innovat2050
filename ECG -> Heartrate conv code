@@ -1,0 +1,89 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
+
+# Load your ECG CSV
+df = pd.read_csv("ChordsWeb-20261003-170943.csv")
+
+# Sampling rate from your ESP32 code
+fs = 250
+
+ecg = df["Channel16"].to_numpy()
+counter = df["Counter"].to_numpy()
+
+# Reconstruct time using the 8-bit packet counter
+# This accounts for counter rollover and detected gaps
+steps = np.diff(counter) % 256
+sample_number = np.r_[0, np.cumsum(steps)]
+time_s = sample_number / fs
+
+# Detect positive R-peaks
+# Adjust prominence after inspecting the plot
+peaks, properties = find_peaks(
+    ecg,
+    distance=int(0.30 * fs),
+    prominence=0.008
+)
+
+# Calculate RR intervals and instantaneous BPM
+peak_times = time_s[peaks]
+rr_intervals = np.diff(peak_times)
+bpm = 60.0 / rr_intervals
+
+# Build per-beat results
+results = pd.DataFrame({
+    "R_peak_time_s": peak_times[1:],
+    "RR_interval_s": rr_intervals,
+    "BPM": bpm
+})
+
+# Smooth short-term variation using a 5-beat median
+results["BPM_median_5"] = (
+    results["BPM"].rolling(5, min_periods=1).median()
+)
+
+# Save the per-beat heart-rate data
+results.to_csv("heartrate_per_beat.csv", index=False)
+
+# Also save ECG samples with R-peak markers
+ecg_output = pd.DataFrame({
+    "Time_s": time_s,
+    "ECG": ecg,
+    "R_peak": np.zeros(len(ecg), dtype=int),
+    "BPM": np.nan
+})
+
+ecg_output.loc[peaks, "R_peak"] = 1
+ecg_output.loc[peaks[1:], "BPM"] = bpm
+
+ecg_output.to_csv("ecg_with_heartrate.csv", index=False)
+
+# Plot ECG with detected R-peaks
+plt.figure(figsize=(14, 5))
+plt.plot(time_s, ecg, label="ECG")
+plt.scatter(peak_times, ecg[peaks],
+            color="red", s=20, label="Detected R-peaks")
+plt.xlabel("Time (seconds)")
+plt.ylabel("ECG amplitude")
+plt.title("ECG Signal with Detected R-peaks")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plot calculated heart rate
+plt.figure(figsize=(14, 4))
+plt.plot(results["R_peak_time_s"], results["BPM"],
+         label="Instantaneous BPM")
+plt.plot(results["R_peak_time_s"], results["BPM_median_5"],
+         label="5-beat median BPM")
+plt.xlabel("Time (seconds)")
+plt.ylabel("Heart rate (BPM)")
+plt.title("Heart Rate vs Time")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print(results.head(10))
+print("Mean BPM:", results["BPM"].mean())
+print("Median BPM:", results["BPM"].median())
