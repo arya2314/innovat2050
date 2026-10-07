@@ -13,7 +13,11 @@
 
 #define BLYNK_TEMPLATE_ID   "TMPLxxxxxx"
 #define BLYNK_TEMPLATE_NAME "WorkerHealthWatch"
-#define BLYNK_AUTH_TOKEN    "YOUR_BLYNK_AUTH_TOKEN"
+#define BLYNK_AUTH_TOKEN    "YOUR_COPIED_BLYNK_TOKEN"
+
+const char* ssid     = "YOUR_WIFI_SSID";
+const char* pass     = "YOUR_WIFI_PASSWORD";
+
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -38,8 +42,6 @@
 #define TMP117_TEMP_REG     0x00
 
 // ── Wi-Fi & NTP Configuration ──
-const char* ssid     = "YOUR_WIFI_SSID";
-const char* pass     = "YOUR_WIFI_PASSWORD";
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec     = 19800; // IST (+5:30)
 const int   daylightOffset_sec = 0;
