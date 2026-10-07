@@ -1,0 +1,22 @@
+// ── MAC Address Reader for Regular ESP32 ──
+// Flash this ONLY once on the Regular ESP32 to get its MAC
+#include <WiFi.h>
+
+void setup() {
+    Serial.begin(115200);
+    delay(1000); // Wait for Serial Monitor to open
+    
+    WiFi.mode(WIFI_STA); // Must be STA mode for ESP-NOW MAC
+    
+    Serial.println("\n══════════════════════════════════════════");
+    Serial.println("   Regular ESP32 — MAC Address Reader");
+    Serial.println("══════════════════════════════════════════");
+    Serial.print("  WiFi MAC Address : ");
+    Serial.println(WiFi.macAddress());
+    Serial.println("══════════════════════════════════════════");
+    Serial.println("  Copy the MAC above into Master firmware.");
+}
+
+void loop() {
+    // Nothing needed
+}
